@@ -50,7 +50,7 @@ export default {
 }
 
 #count:hover {
-  background-color: blue; /* Change la couleur du bouton au survol */
+  background-color: hsla(160, 100%, 37%, 1); /* Change la couleur du bouton au survol */
   color: white; /* Change la couleur du texte au survol */
 }
 
