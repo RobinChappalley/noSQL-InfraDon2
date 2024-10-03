@@ -14,7 +14,7 @@ export default {
   // Ajoute la donnée pour le compteur
   data() {
     return {
-      count: 0 // Initialise le compteur à 0
+      count: 10 // Initialise le compteur à 0
     }
   },
   methods: {
