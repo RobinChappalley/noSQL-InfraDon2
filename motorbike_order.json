@@ -1,0 +1,51 @@
+{
+    "utilisateur": {
+      "nom": "Paul Martin",
+      "email": "paul.martin@example.com",
+      "adresse": {
+        "rue": "45 avenue des Champs-Élysées",
+        "ville": "Paris",
+        "codePostal": "75008",
+        "pays": "France"
+      },
+      "historiqueCommandes": [
+        {
+          "idCommande": 1,
+          "produits": [
+            {
+              "nomProduit": "Moto",
+              "marque": "Yamaha",
+              "modele": "MT-07",
+              "couleur": "Noir",
+              "quantite": 1,
+              "prix": 7800.00
+            },
+            {
+              "nomProduit": "Casque de moto",
+              "marque": "Shoei",
+              "modele": "NXR",
+              "couleur": "Blanc",
+              "quantite": 1,
+              "prix": 500.00
+            }
+          ],
+          "dateCommande": "2024-09-20"
+        },
+        {
+          "idCommande": 2,
+          "produits": [
+            {
+              "nomProduit": "Veste de moto",
+              "marque": "Dainese",
+              "taille": "L",
+              "couleur": "Noir",
+              "quantite": 1,
+              "prix": 350.00
+            }
+          ],
+          "dateCommande": "2024-09-28"
+        }
+      ]
+    }
+  }
+  
