@@ -9,12 +9,16 @@
 <script lang="ts">
 import { onMounted } from 'vue'; // Importe le hook onMounted de Vue
 import PouchDB from 'pouchdb'; // Importe PouchDB
+import PouchDBHttp from 'pouchdb-adapter-http'; // Importe l'adaptateur HTTP pour CouchDB
+
+PouchDB.plugin(PouchDBHttp); // Active l'adaptateur HTTP pour pouvoir se connecter à CouchDB distant
 
 export default {
   name: 'Robin',
   data() {
     return {
-      count: 10 // Initialise le compteur
+      count: 10, // Initialise le compteur
+      db: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
     };
   },
   methods: {
@@ -23,21 +27,21 @@ export default {
       this.count++;
     },
     // Initialise la base de données PouchDB
-    innitDB() {
-      const db = new PouchDB('http://localhost:5986/motorbikedb');
-      console.log('Base de données initialisée :', db);
+    initDB() {
+      try {
+        this.db = new PouchDB('http://127.0.0.1:5984/motorbikedb');
+        console.log('Base de données initialisée :', this.db);
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de la base de données :', error);
+      }
     }
   },
-  // Utilisation du hook de cycle de vie onMounted
   mounted() {
-    this.innitDB(); // Appelle innitDB lors du montage du composant
+    // Appelle initDB lors du montage du composant
+    this.initDB();
   }
 };
 </script>
-
-<style scoped>
-/* Ton style ici, si nécessaire */
-</style>
 
 <style>
 @media (min-width: 1024px) {
