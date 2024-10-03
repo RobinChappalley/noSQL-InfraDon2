@@ -8,7 +8,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 export default {
   name: 'Robin',
   // Ajoute la donnée pour le compteur
@@ -24,6 +24,7 @@ export default {
     }
   }
 }
+
 </script>
 
 <style scoped>
