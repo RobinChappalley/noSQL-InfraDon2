@@ -40,4 +40,18 @@ export default {
     align-items: center;
   }
 }
+#count {
+  cursor: pointer; /* Le curseur doit changer lorsque vous passez sur le bouton */
+  padding: 10px;
+  background-color: lightblue;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s ease; /* Ajoute une transition pour un effet plus fluide */
+}
+
+#count:hover {
+  background-color: blue; /* Change la couleur du bouton au survol */
+  color: white; /* Change la couleur du texte au survol */
+}
+
 </style>
