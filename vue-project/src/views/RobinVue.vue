@@ -4,7 +4,7 @@
   <div class="robin">
     <h1>This is a Robin page</h1>
     <!-- Affiche la valeur du compteur sur le bouton -->
-    <p id="count" @click="incrementCount">{{ count }}</p>
+    <button id="count" @click="incrementCount">{{ count }}</button>
   </div>
 </template>
 

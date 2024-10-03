@@ -39,7 +39,7 @@ nav {
   text-align: center;
   margin-top: 2rem;
 }
-cursor{
+#count {
   cursor: pointer;
 }
 
