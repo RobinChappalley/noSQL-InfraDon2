@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="robin">
     <h1>This is a Robin page</h1>
@@ -7,6 +5,7 @@
     <button id="count" @click="incrementCount">{{ count }}</button>
   </div>
 </template>
+
 
 <script lang="ts">
 export default {
@@ -21,7 +20,20 @@ export default {
     // Fonction pour incrémenter le compteur
     incrementCount() {
       this.count++
+    },
+    innitDB() {
+      const db = new PouchDB('http://localhost:5986/motorbikedb');
+
+      console.log(db);
+    },
+    fetchData() {
+
+    },
+    onMounted() {
+      this.innitDB();
+
     }
+
   }
 }
 
@@ -40,18 +52,22 @@ export default {
     align-items: center;
   }
 }
+
 #count {
-  cursor: pointer; /* Le curseur doit changer lorsque vous passez sur le bouton */
+  cursor: pointer;
+  /* Le curseur doit changer lorsque vous passez sur le bouton */
   padding: 10px;
   background-color: lightblue;
   border: none;
   border-radius: 5px;
-  transition: background-color 0.3s ease; /* Ajoute une transition pour un effet plus fluide */
+  transition: background-color 0.3s ease;
+  /* Ajoute une transition pour un effet plus fluide */
 }
 
 #count:hover {
-  background-color: hsla(160, 100%, 37%, 1); /* Change la couleur du bouton au survol */
-  color: white; /* Change la couleur du texte au survol */
+  background-color: hsla(160, 100%, 37%, 1);
+  /* Change la couleur du bouton au survol */
+  color: white;
+  /* Change la couleur du texte au survol */
 }
-
 </style>
