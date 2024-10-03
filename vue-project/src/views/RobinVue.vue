@@ -6,43 +6,38 @@
   </div>
 </template>
 
-
 <script lang="ts">
+import { onMounted } from 'vue'; // Importe le hook onMounted de Vue
+import PouchDB from 'pouchdb'; // Importe PouchDB
+
 export default {
   name: 'Robin',
-  // Ajoute la donnée pour le compteur
   data() {
     return {
-      count: 10 // Initialise le compteur à 0
-    }
+      count: 10 // Initialise le compteur
+    };
   },
   methods: {
     // Fonction pour incrémenter le compteur
     incrementCount() {
-      this.count++
+      this.count++;
     },
+    // Initialise la base de données PouchDB
     innitDB() {
       const db = new PouchDB('http://localhost:5986/motorbikedb');
-
-      console.log(db);
-    },
-    fetchData() {
-
-    },
-    onMounted() {
-      this.innitDB();
-
+      console.log('Base de données initialisée :', db);
     }
-
+  },
+  // Utilisation du hook de cycle de vie onMounted
+  mounted() {
+    this.innitDB(); // Appelle innitDB lors du montage du composant
   }
-}
-
+};
 </script>
 
 <style scoped>
 /* Ton style ici, si nécessaire */
 </style>
-
 
 <style>
 @media (min-width: 1024px) {
@@ -55,19 +50,15 @@ export default {
 
 #count {
   cursor: pointer;
-  /* Le curseur doit changer lorsque vous passez sur le bouton */
   padding: 10px;
   background-color: lightblue;
   border: none;
   border-radius: 5px;
   transition: background-color 0.3s ease;
-  /* Ajoute une transition pour un effet plus fluide */
 }
 
 #count:hover {
   background-color: hsla(160, 100%, 37%, 1);
-  /* Change la couleur du bouton au survol */
   color: white;
-  /* Change la couleur du texte au survol */
 }
 </style>
