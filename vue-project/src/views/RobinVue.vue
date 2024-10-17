@@ -1,17 +1,13 @@
 <template>
   <div class="robin">
-    <h1>This is a Robin page</h1>
+    <h1>This is a Robin page 3</h1>
     <!-- Affiche la valeur du compteur sur le bouton -->
     <button id="count" @click="incrementCount">{{ count }}</button>
   </div>
 </template>
 
 <script lang="ts">
-import { onMounted } from 'vue'; // Importe le hook onMounted de Vue
 import PouchDB from 'pouchdb'; // Importe PouchDB
-import PouchDBHttp from 'pouchdb-adapter-http'; // Importe l'adaptateur HTTP pour CouchDB
-
-PouchDB.plugin(PouchDBHttp); // Active l'adaptateur HTTP pour pouvoir se connecter à CouchDB distant
 
 export default {
   name: 'Robin',
@@ -29,8 +25,8 @@ export default {
     // Initialise la base de données PouchDB
     initDB() {
       try {
-        this.db = new PouchDB('http://127.0.0.1:5984/motorbikedb');
-        console.log('Base de données initialisée :', this.db);
+        new PouchDB('http://127.0.0.1:5984/motorbikedb');
+        console.log('Base de données initialisée :');
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la base de données :', error);
       }
