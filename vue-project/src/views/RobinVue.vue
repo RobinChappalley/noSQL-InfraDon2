@@ -1,12 +1,16 @@
 <template>
   <div class="robin">
-    <h1>This is a Robin page 3</h1>
+    <h1>This is a Robin page</h1>
     <!-- Affiche la valeur du compteur sur le bouton -->
     <button id="count" @click="incrementCount">{{ count }}</button>
+    <div>
+      <pre>{{ data }}</pre>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
+import { ref } from 'vue'
 import PouchDB from 'pouchdb'; // Importe PouchDB
 
 export default {
@@ -15,6 +19,7 @@ export default {
     return {
       count: 10, // Initialise le compteur
       db: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
+      data: [] as any[]
     };
   },
   methods: {
@@ -22,11 +27,29 @@ export default {
     incrementCount() {
       this.count++;
     },
+    fetchData() {
+      console.log('fetchData')
+      const storage = ref(this.db);
+      const self = this;
+      if (storage.value) {
+        (storage.value).allDocs({
+          include_docs: true,
+          attachments: true
+        }).then(function (result: any) {
+          console.log('fetchData success', result);
+          self.data = result.rows;
+        }.bind(this)).catch(function (error: any) {
+          console.log('fetchData error', error);
+        });
+      }
+    },
     // Initialise la base de données PouchDB
     initDB() {
       try {
-        new PouchDB('http://127.0.0.1:5984/motorbikedb');
-        console.log('Base de données initialisée :');
+        const dbName = 'post';
+        const db = new PouchDB('http://admin:admin@127.0.0.1:5984/' + dbName);
+        this.db = db;
+        console.log('Base de données initialisée :' + dbName);
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la base de données :', error);
       }
@@ -35,6 +58,7 @@ export default {
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
+    this.fetchData();
   }
 };
 
