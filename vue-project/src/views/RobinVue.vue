@@ -41,7 +41,9 @@ export default {
     this.initDB();
   }
 };
+
 </script>
+
 
 <style>
 @media (min-width: 1024px) {
