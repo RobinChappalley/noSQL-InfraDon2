@@ -6,7 +6,7 @@
     <br>
     <button id="adddb" @click="addDocument">Ajouter document</button>
     <br>
-    <button id="adddb" @click="removeDocument">Enlever document</button>
+    <button id="adddb" @click="removeDocument('18b3412d84a8fb81f0529353df007354')">Enlever document</button>
     <div>
       <pre>{{ data }}</pre>
     </div>
@@ -69,15 +69,11 @@ export default {
         })
         ;
     },
-    removeDocument() {
-console.log("coucou")
-    //this.db?.remove(18b3412d84a8fb81f0529353df007354,1-45fde0d08d26ec9468332a4f7440441d)
-      // this.db?.get('mydoc').then(function (doc) {
-      //   return db.remove(doc);  
-      // }
-      // ).catch(function (error) {
-      //   console.error('Erreur lors de la suppression du document :', error);
-      // })
+    removeDocument(id:string) {
+      this.db?.get(id).then((doc)=>{
+        this.db?.remove(doc)
+      });
+
     },
 
     getFakeDoc() {
