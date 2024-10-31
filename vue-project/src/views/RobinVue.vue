@@ -46,10 +46,11 @@ export default {
     // Initialise la base de données PouchDB
     initDB() {
       try {
-        const dbName = 'post';
+        const dbName = 'motorbikedb';
         const db = new PouchDB('http://admin:admin@127.0.0.1:5984/' + dbName);
         this.db = db;
         console.log('Base de données initialisée :' + dbName);
+        this.fetchData();
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la base de données :', error);
       }
@@ -58,7 +59,7 @@ export default {
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
-    this.fetchData();
+   
   }
 };
 
