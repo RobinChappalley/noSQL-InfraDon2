@@ -20,6 +20,7 @@ export default {
       count: 10, // Initialise le compteur
       db: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
       data: [] as any[]
+
     };
   },
   methods: {
@@ -54,12 +55,31 @@ export default {
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la base de données :', error);
       }
+    },
+    addDocument() {
+      this.db?.put(this.getFakeDoc)
+    },
+    getFakeDoc() {
+      return {
+        "idCommande": 3,
+        "produits": [
+          {
+            "nomProduit": "Veste de moto",
+            "marque": "Alpinestar",
+            "taille": "XL",
+            "couleur": "Blanc",
+            "quantite": 2,
+            "prix": 450.00
+          }
+        ],
+        "dateCommande": "2024-09-28"
+      }
     }
   },
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
-   
+
   }
 };
 
