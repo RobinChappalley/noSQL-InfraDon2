@@ -3,7 +3,10 @@
     <h1>This is a Robin page</h1>
     <!-- Affiche la valeur du compteur sur le bouton -->
     <button id="count" @click="incrementCount">{{ count }}</button>
+    <br>
     <button id="adddb" @click="addDocument">Ajouter document</button>
+    <br>
+    <button id="adddb" @click="removeDocument">Enlever document</button>
     <div>
       <pre>{{ data }}</pre>
     </div>
@@ -66,8 +69,15 @@ export default {
         })
         ;
     },
-    removeDocument() { 
-      
+    removeDocument() {
+console.log("coucou")
+    //this.db?.remove(18b3412d84a8fb81f0529353df007354,1-45fde0d08d26ec9468332a4f7440441d)
+      // this.db?.get('mydoc').then(function (doc) {
+      //   return db.remove(doc);  
+      // }
+      // ).catch(function (error) {
+      //   console.error('Erreur lors de la suppression du document :', error);
+      // })
     },
 
     getFakeDoc() {
