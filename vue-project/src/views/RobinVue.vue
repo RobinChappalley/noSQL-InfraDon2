@@ -3,6 +3,7 @@
     <h1>This is a Robin page</h1>
     <!-- Affiche la valeur du compteur sur le bouton -->
     <button id="count" @click="incrementCount">{{ count }}</button>
+    <button id="adddb" @click="addDocument">Ajouter document</button>
     <div>
       <pre>{{ data }}</pre>
     </div>
@@ -57,8 +58,18 @@ export default {
       }
     },
     addDocument() {
-      this.db?.put(this.getFakeDoc)
+      this.db?.post(this.getFakeDoc())
+        .then((Response) => {
+          console.log('Document ajouté avec plaisir', Response);
+        }).catch((error) => {
+          console.error('Erreur lors de l\'ajout du document :', error);
+        })
+        ;
     },
+    removeDocument() { 
+      
+    },
+
     getFakeDoc() {
       return {
         "idCommande": 3,
@@ -79,7 +90,7 @@ export default {
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
-
+    this.addDocument();
   }
 };
 
