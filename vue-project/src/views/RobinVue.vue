@@ -1,23 +1,25 @@
 <template>
   <div class="robin">
     <h1>This is a Robin page</h1>
-    <!-- Affiche la valeur du compteur sur le bouton -->
-    <!--  <button id="count" @click="incrementCount">{{ count }}</button> -->
     <br>
     <button id="adddb" @click="addDocument">Ajouter document</button>
     <br>
-    <!-- <button id="removedb" @click="removeDocument('18b3412d84a8fb81f0529353df007354')">Enlever document</button> -->
     <div>
       <h2>Database Documents</h2>
       <ul>
-        <li v-for="doc in data" :key="doc.id">
+        <li v-for="doc in data" :key="doc.id" :id="doc.id">
           <pre>{{ JSON.stringify(doc.doc, null, 2) }}</pre>
+          <input type="text" name="article ${}"></input>
+          <br>
+          <button @click="modify(doc.id)">Modifier</button>
+          <br>
           <button @click="removeDocument(doc.id)">Delete</button>
         </li>
       </ul>
     </div>
   </div>
 </template>
+
 
 <script lang="ts">
 import { ref } from 'vue'
@@ -27,7 +29,7 @@ export default {
   name: 'Robin',
   data() {
     return {
-      count: 10, // Initialise le compteur
+      count: 1, // Initialise le compteur
       db: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
       data: [] as any[]
 
@@ -80,18 +82,8 @@ export default {
           // Affiche un message d'erreur dans la console
           console.error('Erreur lors de l\'ajout du document :', error);
         });
-    }
-    // addDocument() {
-    //   this.db?.post(this.getFakeDoc())
-    //     .then((Response) => {
-    //       console.log('Document ajouté avec plaisir', Response);
-    //     }).catch((error) => {
-    //       console.error('Erreur lors de l\'ajout du document :', error);
-    //     })
-    //     ;
-    //   this.fetchData;
-    // },
-    ,
+    },
+    // Fonction pour supprimer un document dans la base de données PouchDB
     removeDocument(id: string) {
       this.db?.get(id)
         .then((doc) => {
@@ -112,7 +104,7 @@ export default {
     },
     getFakeDoc() {
       return {
-        "idCommande": 3,
+        "idCommande": this.count++,
         "produits": [
           {
             "nomProduit": "Veste de moto",
@@ -125,7 +117,37 @@ export default {
         ],
         "dateCommande": "2024-09-28"
       }
+    },
+    modify(docId: string) {
+      // Trouve l'élément correspondant à cet ID
+      const input = document.querySelector<HTMLInputElement>(`li[id="${docId}"] input`);
+
+      if (!input || !this.db) {
+        console.error("Input ou base de données introuvable");
+        return;
+      }
+
+      const newArticleName = input.value;
+
+      // Récupère le document dans la base de données
+      this.db.get(docId)
+        .then((doc: any) => {
+          // Modifie le nom du produit
+          if (doc.produits && doc.produits.length > 0) {
+            doc.produits[0].nomProduit = newArticleName; // Change le nom du premier produit
+          }
+          // Sauvegarde les modifications
+          return this.db?.put(doc);
+        })
+        .then(() => {
+          console.log("Document modifié avec succès !");
+          this.fetchData(); // Actualise la liste des documents
+        })
+        .catch((error: any) => {
+          console.error("Erreur lors de la modification du document :", error);
+        });
     }
+
   },
   mounted() {
     // Appelle initDB lors du montage du composant
@@ -145,6 +167,7 @@ export default {
     align-items: center;
   }
 }
+
 
 #count {
   cursor: pointer;
@@ -175,6 +198,99 @@ li {
 pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #ff4136;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #ff7266;
+}
+
+.document {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.document h3 {
+  margin-top: 0;
+}
+
+.document p {
+  margin-top: 10px;
+}
+
+.document button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #ff4136;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.document button:hover {
+  background-color: #ff7266;
+}
+
+#count {
+  cursor: pointer;
+  padding: 10px;
+  background-color: lightblue;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+#count:hover {
+  background-color: hsla(160, 100%, 37%, 1);
+  color: white;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+pre {
+  background-color: #f0f0f0;
+  /* Light gray background for contrast */
+  border: 1px solid #ccc;
+  /* Subtle border */
+  border-radius: 8px;
+  /* Rounded corners */
+  padding: 15px;
+  /* More padding for better spacing */
+  font-family: 'Courier New', Courier, monospace;
+  /* Monospaced font */
+  font-size: 14px;
+  /* Consistent font size */
+  line-height: 1.6;
+  /* Increased line height for readability */
+  overflow-x: auto;
+  /* Horizontal scroll for long lines */
+  color: #333;
+  /* Dark text color for contrast */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Subtle shadow for depth */
+
 }
 
 button {
