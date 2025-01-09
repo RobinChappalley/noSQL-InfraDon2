@@ -9,6 +9,7 @@
       <button @click="syncfrom()">Synchroniser depuis la base de données</button>
       <br>
       <button @click="syncto()">Synchroniser vers la base de données</button>
+      <button @click="queryIndex()">bouton Index</button>
       <ul>
         <li v-for="doc in data" :key="doc.id" :id="doc.id">
           <pre>{{ JSON.stringify(doc.doc, null, 2) }}</pre>
@@ -190,11 +191,31 @@ export default {
         console.error('Erreur lors de la synchronisation de la base de données :', error);
       }
     }
+    , createIndex() {
+      this.localdb?.createIndex({
+        index: { fields: ['idCommande'] }
+      }).then(function (result) {
+        console.log('Index créé avec succès', result);
+      }).catch(function (error) {
+        console.error('Erreur lors de la création de l\'index :', error);
+      });
+    },
+    queryIndex() {
+      this.localdb?.find({
+        selector: { idCommande: { $eq: 1 } }
+      }).then(function (result) {
+        console.log('Résultat de la requête :', result);
+      }).catch(function (error) {
+        console.error('Erreur lors de la requête :', error);
+      });
+    }
+
   },
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
     this.addDocument();
+    this.createIndex();
   }
 };
 
