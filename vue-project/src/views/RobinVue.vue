@@ -6,6 +6,9 @@
     <br>
     <div>
       <h2>Database Documents</h2>
+      <button @click="syncfrom()">Synchroniser depuis la base de données</button>
+      <br>
+      <button @click="syncto()">Synchroniser vers la base de données</button>
       <ul>
         <li v-for="doc in data" :key="doc.id" :id="doc.id">
           <pre>{{ JSON.stringify(doc.doc, null, 2) }}</pre>
@@ -14,6 +17,8 @@
           <button @click="modify(doc.id)">Modifier</button>
           <br>
           <button @click="removeDocument(doc.id)">Delete</button>
+          <br>
+
         </li>
       </ul>
     </div>
@@ -24,13 +29,15 @@
 <script lang="ts">
 import { ref } from 'vue'
 import PouchDB from 'pouchdb'; // Importe PouchDB
+import findPlugin from 'pouchdb-find'; // Importe le plugin PouchDB Find
 
 export default {
   name: 'Robin',
   data() {
     return {
       count: 1, // Initialise le compteur
-      db: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
+      localdb: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
+      findPlugin: null as PouchDB.Plugin | null, // Stocke l'instance du plugin PouchDB Find
       data: [] as any[]
 
     };
@@ -42,12 +49,12 @@ export default {
     },
     fetchData() {
       console.log('fetchData')
-      if (this.db) {
-        this.db.allDocs({
+      if (this.localdb) {
+        this.localdb.allDocs({
           include_docs: true,
           attachments: true
         }).then((result: any) => {
-          console.log('fetchData success', result);
+          //console.log('fetchData success', result);
           this.data = result.rows;
         }).catch((error: any) => {
           console.log('fetchData error', error);
@@ -58,8 +65,8 @@ export default {
     initDB() {
       try {
         const dbName = 'motorbikedb';
-        const db = new PouchDB('http://admin:admin@127.0.0.1:5984/' + dbName);
-        this.db = db;
+        const db = new PouchDB(dbName);
+        this.localdb = db;
         console.log('Base de données initialisée :' + dbName);
         this.fetchData();
       } catch (error) {
@@ -69,7 +76,7 @@ export default {
     // Fonction pour ajouter un document à la base de données PouchDB
     addDocument() {
       // Utilise la méthode post de PouchDB pour ajouter un document
-      this.db?.post(this.getFakeDoc())
+      this.localdb?.post(this.getFakeDoc())
         // Gère la promesse de succès
         .then((Response) => {
           // Affiche un message de confirmation dans la console
@@ -85,9 +92,9 @@ export default {
     },
     // Fonction pour supprimer un document dans la base de données PouchDB
     removeDocument(id: string) {
-      this.db?.get(id)
+      this.localdb?.get(id)
         .then((doc) => {
-          return this.db?.remove(doc);
+          return this.localdb?.remove(doc);
         })
         .then((response) => {
           console.log('Document supprimé avec succès', response);
@@ -122,7 +129,7 @@ export default {
       // Trouve l'élément correspondant à cet ID
       const input = document.querySelector<HTMLInputElement>(`li[id="${docId}"] input`);
 
-      if (!input || !this.db) {
+      if (!input || !this.localdb) {
         console.error("Input ou base de données introuvable");
         return;
       }
@@ -130,14 +137,14 @@ export default {
       const newArticleName = input.value;
 
       // Récupère le document dans la base de données
-      this.db.get(docId)
+      this.localdb.get(docId)
         .then((doc: any) => {
           // Modifie le nom du produit
           if (doc.produits && doc.produits.length > 0) {
             doc.produits[0].nomProduit = newArticleName; // Change le nom du premier produit
           }
           // Sauvegarde les modifications
-          return this.db?.put(doc);
+          return this.localdb?.put(doc);
         })
         .then(() => {
           console.log("Document modifié avec succès !");
@@ -146,8 +153,43 @@ export default {
         .catch((error: any) => {
           console.error("Erreur lors de la modification du document :", error);
         });
-    }
+    },
+    syncto() {
+      console.log("syncto")
+      try {
+        const remoteDb = 'http://admin:admin@localhost:5984/motorbikedb'
+        this.localdb?.replicate.to(remoteDb, {
+          live: true,
+          retry: true
+        }).on('complete', function () {
+          console.log('Remote to local replication complete');
+        }).on('error', function (err) {
+          console.error('Remote to local replication error:', err);
+        });
+        this.fetchData()
+      }
+      catch (error) {
+        console.error('Erreur lors de la synchronisation vers la base de données :', error);
+      }
+    },
+    syncfrom() {
+      console.log("syncfrom")
+      try {
+        const remoteDb = 'http://admin:admin@localhost:5984/motorbikedb'
+        this.localdb?.replicate.from(remoteDb, {
+          live: true,
+          retry: true
+        }).on('error', function (err) {
+          console.log('sync error', err)
+        });
 
+        this.fetchData()
+
+      }
+      catch (error) {
+        console.error('Erreur lors de la synchronisation de la base de données :', error);
+      }
+    }
   },
   mounted() {
     // Appelle initDB lors du montage du composant
