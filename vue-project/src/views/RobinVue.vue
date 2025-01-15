@@ -2,7 +2,7 @@
   <div class="robin">
     <h1>This is a Robin page</h1>
     <br>
-    <button id="adddb" @click="addDocument">Ajouter document</button>
+    <button id="adddb" @click="addDocument()  ">Ajouter document</button>
     <br>
     <div>
       <h2>Database Documents</h2>
