@@ -1,6 +1,7 @@
 <template>
   <div class="robin">
     <h1>This is a Robin page</h1>
+    <input type="file" id="fileInput">
     <br>
     <button id="adddb" @click="addDocument()">Ajouter document</button>
     <br>
@@ -9,15 +10,18 @@
       <button @click="syncfrom()">Synchroniser depuis la base de données</button>
       <br>
       <button @click="syncto()">Synchroniser vers la base de données</button>
-      <button @click="queryIndex()">bouton Index</button>
+      <br>
+      <button @click="queryIndex()">Bouton Index</button>
       <ul>
         <li v-for="doc in data" :key="doc.id" :id="doc.id">
           <pre>{{ JSON.stringify(doc.doc, null, 2) }}</pre>
           <input type="text" name="article ${}"></input>
-          <br>
           <button @click="modify(doc.id)">Modifier</button>
           <br>
-          <button @click="removeDocument(doc.id)">Delete</button>
+          <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
+
+          <br>
+          <button @click="removeDocument(doc.id)">Supprimer</button>
           <br>
         </li>
       </ul>
@@ -29,7 +33,7 @@
 import { ref, resolveTransitionHooks } from 'vue'
 import PouchDB from 'pouchdb'; // Importe PouchDB
 import findPlugin from 'pouchdb-find'; // Importe le plugin PouchDB Find
-
+PouchDB.plugin(findPlugin); // Utilise le plugin PouchDB Find
 export default {
   name: 'Robin',
   data() {
@@ -66,6 +70,8 @@ export default {
         const db = new PouchDB(dbName);
         this.localdb = db;
         console.log('Base de données initialisée :' + dbName);
+        this.createIndex();
+        this.addDocument();
         this.fetchData();
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la base de données :', error);
@@ -73,20 +79,50 @@ export default {
     },
     // Fonction pour ajouter un document à la base de données PouchDB
     addDocument() {
-      // Utilise la méthode post de PouchDB pour ajouter un document
-      this.localdb?.post(this.getFakeDoc())
-        // Gère la promesse de succès
-        .then((Response) => {
-          // Affiche un message de confirmation dans la console
-          console.log('Document ajouté avec plaisir', Response);
-          // Appelle la fonction fetchData pour actualiser la liste des documents
-          this.fetchData();
-        })
-        // Gère la promesse d'erreur
-        .catch((error) => {
-          // Affiche un message d'erreur dans la console
-          console.error('Erreur lors de l\'ajout du document :', error);
-        });
+      const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+      const file = fileInput?.files?.[0];
+
+      const doc = this.getFakeDoc();
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Data = reader.result?.toString().split(',')[1]; // Extraire la partie base64
+          const attachment = {
+            _attachments: {
+              [file.name]: {
+                content_type: file.type,
+                data: base64Data
+              }
+            }
+          };
+          Object.assign(doc, attachment);
+          this.localdb?.post(doc)
+            .then((Response) => {
+              console.log('Document ajouté avec plaisir', Response);
+              this.fetchData();
+            })
+            .catch((error) => {
+              console.error('Erreur lors de l\'ajout du document :', error);
+            });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Utilise la méthode post de PouchDB pour ajouter un document
+        this.localdb?.post(this.getFakeDoc())
+          // Gère la promesse de succès
+          .then((Response) => {
+            // Affiche un message de confirmation dans la console
+            console.log('Document ajouté avec plaisir', Response);
+            // Appelle la fonction fetchData pour actualiser la liste des documents
+            this.fetchData();
+          })
+          // Gère la promesse d'erreur
+          .catch((error) => {
+            // Affiche un message d'erreur dans la console
+            console.error('Erreur lors de l\'ajout du document :', error);
+          });
+      }
     },
     // Fonction pour supprimer un document dans la base de données PouchDB
     removeDocument(id: string) {
@@ -153,7 +189,7 @@ export default {
         });
     },
     syncto() {
-      console.log("syncto")
+      console.log("sync to remote database")
       try {
         const remoteDb = 'http://admin:admin@localhost:5984/motorbikedb'
         this.localdb?.replicate.to(remoteDb, {
@@ -171,7 +207,7 @@ export default {
       }
     },
     syncfrom() {
-      console.log("syncfrom")
+      console.log("sync from remote database")
       try {
         const remoteDb = 'http://admin:admin@localhost:5984/motorbikedb'
         this.localdb?.replicate.from(remoteDb, {
@@ -205,13 +241,12 @@ export default {
       }).catch(function (error) {
         console.error('Erreur lors de la requête :', error);
       });
-    }
+    },
+
   },
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
-    this.addDocument();
-    // this.createIndex();
   }
 };
 </script>
