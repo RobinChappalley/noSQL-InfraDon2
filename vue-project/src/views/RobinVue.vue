@@ -2,7 +2,7 @@
   <div class="robin">
     <h1>This is a Robin page</h1>
     <br>
-    <button id="adddb" @click="addDocument()  ">Ajouter document</button>
+    <button id="adddb" @click="addDocument()">Ajouter document</button>
     <br>
     <div>
       <h2>Database Documents</h2>
@@ -19,16 +19,14 @@
           <br>
           <button @click="removeDocument(doc.id)">Delete</button>
           <br>
-
         </li>
       </ul>
     </div>
   </div>
 </template>
 
-
 <script lang="ts">
-import { ref } from 'vue'
+import { ref, resolveTransitionHooks } from 'vue'
 import PouchDB from 'pouchdb'; // Importe PouchDB
 import findPlugin from 'pouchdb-find'; // Importe le plugin PouchDB Find
 
@@ -40,7 +38,6 @@ export default {
       localdb: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
       findPlugin: null as PouchDB.Plugin | null, // Stocke l'instance du plugin PouchDB Find
       data: [] as any[]
-
     };
   },
   methods: {
@@ -55,8 +52,8 @@ export default {
           include_docs: true,
           attachments: true
         }).then((result: any) => {
-          //console.log('fetchData success', result);
           this.data = result.rows;
+          console.log('Data fetched:', this.data); // Added console log for debugging
         }).catch((error: any) => {
           console.log('fetchData error', error);
         });
@@ -190,8 +187,8 @@ export default {
       catch (error) {
         console.error('Erreur lors de la synchronisation de la base de données :', error);
       }
-    }
-    , createIndex() {
+    },
+    createIndex() {
       this.localdb?.createIndex({
         index: { fields: ['idCommande'] }
       }).then(function (result) {
@@ -209,18 +206,15 @@ export default {
         console.error('Erreur lors de la requête :', error);
       });
     }
-
   },
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
     this.addDocument();
-    this.createIndex();
+    // this.createIndex();
   }
 };
-
 </script>
-
 
 <style>
 @media (min-width: 1024px) {
@@ -230,7 +224,6 @@ export default {
     align-items: center;
   }
 }
-
 
 #count {
   cursor: pointer;
@@ -353,7 +346,6 @@ pre {
   /* Dark text color for contrast */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   /* Subtle shadow for depth */
-
 }
 
 button {
