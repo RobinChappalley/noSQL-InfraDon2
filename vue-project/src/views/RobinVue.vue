@@ -10,7 +10,6 @@
       <br>
       <button @click="syncto()">Synchroniser vers la base de données</button>
       <br>
-      <button @click="queryIndex()">Bouton Index</button>
       <ul>
         <li v-for="doc in data" :key="doc.id" :id="doc.id">
           <div v-if="doc.doc._attachments">
