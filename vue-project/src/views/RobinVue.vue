@@ -4,6 +4,12 @@
     <br>
     <button id="adddb" @click="addRandomDocument()">Ajouter document</button>
     <br>
+    <button id="adddb" @click="add100Randomdocuments()">Ajouter 100 documents</button>
+    <br>
+    <button id="adddb" @click="deleteAllDocuments()">Supprimer tous les documents</button>
+
+    
+    <br>
     <div>
       <h2>Database Documents</h2>
       <button @click="syncfrom()">Synchroniser depuis la base de données</button>
@@ -12,16 +18,13 @@
       <br>
       <div v-if="selectedDoc" class="selected-document">
         <h2>Détails du Document {{ selectedDoc.id }}</h2>
-
         <div>
           <pre>{{ JSON.stringify(filterDoc(editDoc.doc), null, 2) }}</pre>
-
           <h3>Ajouts</h3>
           <input type="file" :name="'file-' + selectedDoc.id" :id="'file-' + selectedDoc.id" />
           <br />
           <button @click="addFile(selectedDoc.id)">Ajouter une pièce jointe</button>
           <br />
-
           <h3>Modifications</h3>
           <input type="text" v-model="editDoc.doc.produits[0].nomProduit" />
           <br />
@@ -34,6 +37,7 @@
           <div v-if="selectedDoc.doc._attachments">
             <div v-for="(attachment, name) in selectedDoc.doc._attachments" :key="name">
               <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;" />
+              <button @click="removeImage(selectedDoc.id, name)">Supprimer l'image</button>
             </div>
           </div>
         </div>
@@ -103,7 +107,7 @@ export default {
       }
     },
     // Fonction pour ajouter un document à la base de données PouchDB
-    addFile(id: any) {
+    addFile(id: string) {
       const fileInput = document.querySelector<HTMLInputElement>(`#file-${id}`);
       const file = fileInput?.files?.[0];
 
@@ -125,7 +129,13 @@ export default {
             return this.localdb?.put(doc);
           }).then((response) => {
             console.log('Document mis à jour avec succès', response);
-            this.fetchData();
+            this.selectedDoc.doc._attachments = {
+              ...this.selectedDoc.doc._attachments,
+              [file.name]: {
+                content_type: file.type,
+                dataUrl: `data:${file.type};base64,${base64Data}`
+              }
+            };
           }).catch((error) => {
             console.error('Erreur lors de la mise à jour du document :', error);
           });
@@ -182,7 +192,7 @@ export default {
         "dateCommande": "2024-09-28"
       }
     },
-    modify(docId:any) {
+    modify(docId: any) {
       if (!this.localdb || !this.editDoc) return;
 
       this.localdb
@@ -207,8 +217,6 @@ export default {
           }
         });
     },
-
-
     resolveConflict(docId: any) {
       this.localdb?.get(docId)
         .then((latestDoc) => {
@@ -225,7 +233,6 @@ export default {
           console.error('Impossible de résoudre le conflit :', error);
         });
     },
-
     syncto() {
       console.log("sync to remote database")
       try {
@@ -271,7 +278,6 @@ export default {
         console.error('Erreur lors de la création de l\'index :', error);
       });
     },
-
     queryIndex() {
       this.localdb?.find({
         selector: { idCommande: { $eq: 1 } }
@@ -291,7 +297,62 @@ export default {
     filterDoc(doc: any) {
       const { _attachments, ...filteredDoc } = doc;
       return filteredDoc;
+    },
+    removeImage(docId: string, imgName: any) {
+      console.log('remove image', imgName);
+      if (!this.localdb || !docId || !imgName) return;
+      this.localdb.get(docId).then((doc) => {
+        if (doc._attachments && doc._attachments[imgName]) {
+          delete doc._attachments[imgName];
+          return this.localdb?.put(doc);
+        } else {
+          throw new Error('Image not found');
+        }
+      }).then(() => {
+        delete this.selectedDoc.doc._attachments[imgName];
+        console.log('Image supprimée avec succès');
+        //this.selectedDoc.doc._attachments = { ...this.selectedDoc.doc._attachments };
+      }).catch((error) => {
+        console.error('Erreur lors de la suppression de l\'image :', error);
+      });
+    },
+    add100Randomdocuments() {
+      const NUMBER = 100;
+      for (let i = 0; i < NUMBER; i++) {
+        this.addRandomDocument();
+      }
+      console.log(`${NUMBER} nouveaux documents ont été ajoutés avec succès.`);
+      this.fetchData(); // Actualise la liste des documents
+
+    },
+    deleteAllDocuments() {
+      if (!this.localdb) {
+        console.error("La base de données n'est pas définie.");
+        return;
+      }
+
+      this.localdb
+        .allDocs({ include_docs: true })
+        .then((result) => {
+          const docsToDelete = result.rows.map((row) => {
+            return {
+              _id: row.doc?._id,
+              _rev: row.doc?._rev,
+              _deleted: true, // Marque le document pour suppression
+            };
+          });
+
+          return this.localdb?.bulkDocs(docsToDelete); // Supprime tous les documents
+        })
+        .then(() => {
+          this.fetchData(); // Actualise la liste des documents
+          console.log("Tous les documents ont été supprimés avec succès !");
+        })
+        .catch((error) => {
+          console.error("Erreur lors de la suppression des documents :", error);
+        });
     }
+
 
   },
   mounted() {
@@ -510,4 +571,36 @@ header {
   border-radius: 5px;
   margin-bottom: 20px;
 }
+
+img::after {
+  content: "📎";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 18px;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 5px;
+  border-radius: 50%;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
 </style>
+removeImage(docId: string, imgName: string) {
+console.log('remove image', imgName);
+if (!this.localdb || !docId || !imgName) return;
+this.localdb.get(docId).then((doc) => {
+if (doc._attachments && doc._attachments[imgName]) {
+delete doc._attachments[imgName];
+return this.localdb?.put(doc);
+} else {
+throw new Error('Image not found');
+}
+}).then(() => {
+console.log('Image supprimée avec succès');
+this.selectedDoc.doc._attachments = { ...this.selectedDoc.doc._attachments };
+}).catch((error) => {
+console.error('Erreur lors de la suppression de l\'image :', error);
+});
+}
