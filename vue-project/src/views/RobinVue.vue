@@ -20,9 +20,11 @@
           <pre>{{ JSON.stringify(doc.doc, null, 2) }}</pre>
           <input type="text" :name="'article-' + doc.id"></input>
           <br>
-          <button @click="modify(doc.id)">Modifier</button>
           <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
-
+          <br>
+          <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
+          <br>
+          <button @click="modify(doc.id)">Modifier</button>
           <br>
           <button @click="removeDocument(doc.id)">Supprimer</button>
           <br>
@@ -89,33 +91,32 @@ export default {
       }
     },
     // Fonction pour ajouter un document à la base de données PouchDB
-    addFile() {
-      const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]');
+    addFile(id: any) {
+      const fileInput = document.querySelector<HTMLInputElement>(`#file-${id}`);
       const file = fileInput?.files?.[0];
-
-      const doc = this.getFakeDoc();
 
       if (file) {
         const reader = new FileReader();
         reader.onload = () => {
           const base64Data = reader.result?.toString().split(',')[1]; // Extraire la partie base64
-          const attachment = {
-            _attachments: {
-              [file.name]: {
-                content_type: file.type,
-                data: base64Data
+          this.localdb?.get(id).then((doc: any) => {
+            const attachment = {
+              _attachments: {
+                ...doc._attachments,
+                [file.name]: {
+                  content_type: file.type,
+                  data: base64Data
+                }
               }
-            }
-          };
-          Object.assign(doc, attachment);
-          this.localdb?.post(doc)
-            .then((Response) => {
-              console.log('Document ajouté avec plaisir', Response);
-              this.fetchData();
-            })
-            .catch((error) => {
-              console.error('Erreur lors de l\'ajout du document :', error);
-            });
+            };
+            Object.assign(doc, attachment);
+            return this.localdb?.put(doc);
+          }).then((response) => {
+            console.log('Document mis à jour avec succès', response);
+            this.fetchData();
+          }).catch((error) => {
+            console.error('Erreur lors de la mise à jour du document :', error);
+          });
         };
         reader.readAsDataURL(file);
       }
