@@ -47,6 +47,7 @@ export default {
   data() {
     return {
       count: 1, // Initialise le compteur
+      number: 1,
       localdb: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
       findPlugin: null as PouchDB.Plugin | null, // Stocke l'instance du plugin PouchDB Find
       data: [] as any[]
@@ -84,7 +85,6 @@ export default {
         this.localdb = db;
         console.log('Base de données initialisée :' + dbName);
         this.createIndex();
-        this.addRandomDocument();
         this.fetchData();
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la base de données :', error);
@@ -164,7 +164,7 @@ export default {
             "marque": "Alpinestar",
             "taille": "XL",
             "couleur": "Blanc",
-            "quantite": 2,
+            "quantite": this.number++,
             "prix": 450.00
           }
         ],
