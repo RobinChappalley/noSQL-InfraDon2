@@ -7,8 +7,16 @@
     <button id="adddb" @click="add100Randomdocuments()">Ajouter 100 documents</button>
     <br>
     <button id="adddb" @click="deleteAllDocuments()">Supprimer tous les documents</button>
+    <div>
+      <input type="text" v-model="searchQuery" @input="searchDocuments" placeholder="Rechercher par ID" />
+      <ul>
+        <li v-for="doc in filteredDocuments" :key="doc._id">
+          {{ doc.id }} - {{ doc.title }}
+        </li>
+      </ul>
+    </div>
 
-    
+
     <br>
     <div>
       <h2>Database Documents</h2>
@@ -66,11 +74,33 @@ export default {
       selectedDoc: null as any, // Stocke le document sélectionné
       editDoc: null as any, // Stocke le document sélectionné
       localdb: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
-      data: [] as any[]
+      data: [] as any[],
+      searchQuery: '',
+      filteredDocuments: [] as any,
     };
   },
+
   methods: {
-    // Fonction pour incrémenter le compteur
+    async searchDocuments() {
+      try {
+        if (this.searchQuery.trim() === '') {
+          // Si la recherche est vide, récupère tous les documents
+          const allDocs = await this.localdb?.allDocs({ include_docs: true });
+          this.filteredDocuments = allDocs?.rows.map(row => row.doc);
+        } else {
+          // Recherche avec un filtre sur l'attribut indexé "id"
+          const result = await this.localdb?.find({
+            selector: {
+              id: { $regex: `^${this.searchQuery}` }, // Recherche partielle
+            },
+          });
+          this.filteredDocuments = result?.docs; // Mettez à jour les documents filtrés
+        }
+      } catch (error) {
+        console.error('Erreur lors de la recherche :', error);
+      }
+    },
+
     fetchData() {
       console.log('fetchData')
       if (this.localdb) {
@@ -252,23 +282,41 @@ export default {
       }
     },
     syncfrom() {
-      console.log("sync from remote database")
+      console.log("sync from remote database");
       try {
-        const remoteDb = 'http://admin:admin@localhost:5984/motorbikedb'
+        const remoteDb = 'http://admin:admin@localhost:5984/motorbikedb';
         this.localdb?.replicate.from(remoteDb, {
           live: true,
-          retry: true
-        }).on('error', function (err) {
-          console.log('sync error', err)
-        });
+          retry: true,
+        })
+          .on('change', (info) => {
+            // Appelé à chaque fois qu'un lot de documents est synchronisé
+            console.log('Des changements ont été synchronisés depuis la base distante :', info);
+            this.fetchData(); // Actualise les données après chaque changement
+          })
+          .on('complete', (info) => {
+            // La réplication s'est terminée avec succès
+            console.log('Réplication terminée :', info);
+          })
+          .on('paused', (err) => {
+            // La réplication est en pause (par exemple, aucune connexion)
+            console.log('Réplication mise en pause :', err);
+          })
+          .on('active', () => {
+            // La réplication reprend
+            console.log('Réplication active');
+          })
+          .on('error', (err) => {
+            // Une erreur s'est produite
+            console.error('Erreur de synchronisation :', err);
+          });
 
-        this.fetchData()
-
-      }
-      catch (error) {
+        console.log("Réplication configurée avec succès");
+      } catch (error) {
         console.error('Erreur lors de la synchronisation de la base de données :', error);
       }
-    },
+    }
+    ,
     createIndex() {
       this.localdb?.createIndex({
         index: { fields: ['idCommande'] }
@@ -352,12 +400,11 @@ export default {
           console.error("Erreur lors de la suppression des documents :", error);
         });
     }
-
-
   },
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
+    this.searchDocuments();
   }
 };
 </script>
