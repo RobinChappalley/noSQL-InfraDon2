@@ -10,26 +10,63 @@
       <br>
       <button @click="syncto()">Synchroniser vers la base de données</button>
       <br>
-      <ul>
-        <li v-for="doc in data" :key="doc.id" :id="doc.id">
+      <div v-if="selectedDoc" class="selected-document">
+        <h2>Détails du Document {{ selectedDoc.id }}</h2>
+        <div v-for="doc in data" :key="doc.id" :id="doc.id" class="document-item" @click="selectDocument(doc)">
+          <div class="document-summary">
+            <h3>Document {{ doc.id }}</h3>
+          </div>
+          <div class="document-details">
+            <pre>{{ JSON.stringify(filterDoc(doc.doc), null, 2) }}</pre>
+            <h3>Ajouts</h3>
+            <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
+            <br>
+            <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
+            <br>
+            <h3>Modifications</h3>
+            <input type="text" :name="'article-' + doc.id"></input>
+            <br>
+            <button @click="modify(doc.id)">Modifier</button>
+            <br>
+            <button @click="removeDocument(doc.id)">Supprimer</button>
+            <br>
+            <div v-if="doc.doc._attachments">
+              <div v-for="(attachment, name) in doc.doc._attachments" :key="name">
+                <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <pre>{{ JSON.stringify(filterDoc(doc.doc), null, 2) }}</pre>
-          <input type="text" :name="'article-' + doc.id"></input>
-          <br>
-          <button @click="modify(doc.id)">Modifier</button>
-          <br>
-          <h3>Pièce jointe</h3>
-          <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
-          <br>
-          <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
-          <br>
-
-          <br>
-          <button @click="removeDocument(doc.id)">Supprimer</button>
-          <br>
-          <div v-if="doc.doc._attachments">
-            <div v-for="(attachment, name) in doc.doc._attachments" :key="name">
-              <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
+        <div v-if="selectedDoc.doc._attachments">
+          <div v-for="(attachment, name) in selectedDoc.doc._attachments" :key="name">
+            <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
+          </div>
+        </div>
+      </div>
+      <ul class="document-list">
+        <li v-for="doc in data" :key="doc.id" :id="doc.id" class="document-item" @click="selectDocument(doc)">
+          <div class="document-summary">
+            <h3>Document {{ doc.id }}</h3>
+          </div>
+          <div class="document-details">
+            <pre>{{ JSON.stringify(filterDoc(doc.doc), null, 2) }}</pre>
+            <h3>Ajouts</h3>
+            <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
+            <br>
+            <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
+            <br>
+            <h3>Modifications</h3>
+            <input type="text" :name="'article-' + doc.id"></input>
+            <br>
+            <button @click="modify(doc.id)">Modifier</button>
+            <br>
+            <button @click="removeDocument(doc.id)">Supprimer</button>
+            <br>
+            <div v-if="doc.doc._attachments">
+              <div v-for="(attachment, name) in doc.doc._attachments" :key="name">
+                <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
+              </div>
             </div>
           </div>
         </li>
@@ -48,6 +85,7 @@ export default {
     return {
       count: 1, // Initialise le compteur
       number: 1,
+      selectedDoc: null as any, // Stocke le document sélectionné
       localdb: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
       data: [] as any[]
     };
@@ -244,6 +282,7 @@ export default {
         console.error('Erreur lors de la création de l\'index :', error);
       });
     },
+
     queryIndex() {
       this.localdb?.find({
         selector: { idCommande: { $eq: 1 } }
@@ -252,6 +291,10 @@ export default {
       }).catch(function (error) {
         console.error('Erreur lors de la requête :', error);
       });
+    },
+    selectDocument(doc: any) {
+      this.selectedDoc = doc;
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Défile vers le haut de la page
     },
     filterDoc(doc: any) {
       const { _attachments, ...filteredDoc } = doc;
@@ -345,10 +388,6 @@ button:hover {
   cursor: pointer;
 }
 
-.document button:hover {
-  background-color: #ff7266;
-}
-
 #count {
   cursor: pointer;
   padding: 10px;
@@ -410,5 +449,73 @@ button {
 
 button:hover {
   background-color: #ff7266;
+}
+
+.robin {
+  width: 85vw
+}
+
+.document-list {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  list-style-type: none;
+  padding: 0;
+}
+
+.document-item {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease, z-index 0.s ease 0.3s;
+}
+
+
+
+
+.document-summary {
+  padding: 10px;
+  background-color: #f9f9f9;
+  color: black;
+  cursor: pointer;
+}
+
+.document-details {
+  display: none;
+  padding: 10px;
+  background-color: #2c61e6;
+}
+
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+button {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: #ff4136;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #ff7266;
+}
+
+header {
+  display: none !important
+}
+
+.selected-document {
+  padding: 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 20px;
 }
 </style>
