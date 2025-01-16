@@ -8,7 +8,7 @@
     <br>
     <button id="adddb" @click="deleteAllDocuments()">Supprimer tous les documents</button>
     <div>
-      <input type="text" v-model="searchQuery" @input="searchDocuments" placeholder="Rechercher par ID" />
+      <input type="text" v-model="searchQuery" @change="searchDocuments" placeholder="Rechercher par ID" />
       <ul>
         <li v-for="doc in filteredDocuments" :key="doc._id">
           {{ doc.id }} - {{ doc.title }}
@@ -81,20 +81,26 @@ export default {
   },
 
   methods: {
+    checkIndexes() {
+      this.localdb?.getIndexes().then((indexes) => {
+        console.log('Indexes existants :', indexes);
+      }).catch((error) => {
+        console.error('Erreur lors de la récupération des index :', error);
+      });
+    },
     async searchDocuments() {
       try {
-        if (this.searchQuery.trim() === '') {
-          // Si la recherche est vide, récupère tous les documents
-          const allDocs = await this.localdb?.allDocs({ include_docs: true });
-          this.filteredDocuments = allDocs?.rows.map(row => row.doc);
-        } else {
+        if (this.searchQuery.trim() !== '') {
           // Recherche avec un filtre sur l'attribut indexé "id"
           const result = await this.localdb?.find({
+
             selector: {
               id: { $regex: `^${this.searchQuery}` }, // Recherche partielle
             },
           });
+          console.log(`${this.searchQuery}`)
           this.filteredDocuments = result?.docs; // Mettez à jour les documents filtrés
+          this.checkIndexes()
         }
       } catch (error) {
         console.error('Erreur lors de la recherche :', error);
@@ -318,13 +324,16 @@ export default {
     }
     ,
     createIndex() {
-      this.localdb?.createIndex({
-        index: { fields: ['idCommande'] }
-      }).then(function (result) {
-        console.log('Index créé avec succès', result);
-      }).catch(function (error) {
-        console.error('Erreur lors de la création de l\'index :', error);
-      });
+      return this.localdb?.createIndex({
+        index: { fields: ['idCommande'] },
+      })
+        .then((result) => {
+          console.log('Index créé avec succès', result);
+        })
+        .catch((error) => {
+          console.error('Erreur lors de la création de l\'index :', error);
+          throw error; // Relance l'erreur pour une gestion dans l'appelant
+        });
     },
     queryIndex() {
       this.localdb?.find({
