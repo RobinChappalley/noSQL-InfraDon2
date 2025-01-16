@@ -49,7 +49,6 @@ export default {
       count: 1, // Initialise le compteur
       number: 1,
       localdb: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
-      findPlugin: null as PouchDB.Plugin | null, // Stocke l'instance du plugin PouchDB Find
       data: [] as any[]
     };
   },
