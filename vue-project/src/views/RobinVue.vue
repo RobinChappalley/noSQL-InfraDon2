@@ -12,35 +12,29 @@
       <br>
       <div v-if="selectedDoc" class="selected-document">
         <h2>Détails du Document {{ selectedDoc.id }}</h2>
-        <div v-for="doc in data" :key="doc.id" :id="doc.id" class="document-item" @click="selectDocument(doc)">
-          <div class="document-summary">
-            <h3>Document {{ doc.id }}</h3>
-          </div>
-          <div class="document-details">
-            <pre>{{ JSON.stringify(filterDoc(doc.doc), null, 2) }}</pre>
-            <h3>Ajouts</h3>
-            <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
-            <br>
-            <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
-            <br>
-            <h3>Modifications</h3>
-            <input type="text" :name="'article-' + doc.id"></input>
-            <br>
-            <button @click="modify(doc.id)">Modifier</button>
-            <br>
-            <button @click="removeDocument(doc.id)">Supprimer</button>
-            <br>
-            <div v-if="doc.doc._attachments">
-              <div v-for="(attachment, name) in doc.doc._attachments" :key="name">
-                <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div v-if="selectedDoc.doc._attachments">
-          <div v-for="(attachment, name) in selectedDoc.doc._attachments" :key="name">
-            <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
+        <div>
+          <pre>{{ JSON.stringify(filterDoc(editDoc.doc), null, 2) }}</pre>
+
+          <h3>Ajouts</h3>
+          <input type="file" :name="'file-' + selectedDoc.id" :id="'file-' + selectedDoc.id" />
+          <br />
+          <button @click="addFile(selectedDoc.id)">Ajouter une pièce jointe</button>
+          <br />
+
+          <h3>Modifications</h3>
+          <input type="text" v-model="editDoc.doc.produits[0].nomProduit" />
+          <br />
+          <button @click="modify(selectedDoc.id)">Modifier</button>
+          <br />
+
+          <button @click="removeDocument(selectedDoc.id)">Supprimer</button>
+          <br />
+
+          <div v-if="selectedDoc.doc._attachments">
+            <div v-for="(attachment, name) in selectedDoc.doc._attachments" :key="name">
+              <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;" />
+            </div>
           </div>
         </div>
       </div>
@@ -48,26 +42,6 @@
         <li v-for="doc in data" :key="doc.id" :id="doc.id" class="document-item" @click="selectDocument(doc)">
           <div class="document-summary">
             <h3>Document {{ doc.id }}</h3>
-          </div>
-          <div class="document-details">
-            <pre>{{ JSON.stringify(filterDoc(doc.doc), null, 2) }}</pre>
-            <h3>Ajouts</h3>
-            <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
-            <br>
-            <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
-            <br>
-            <h3>Modifications</h3>
-            <input type="text" :name="'article-' + doc.id"></input>
-            <br>
-            <button @click="modify(doc.id)">Modifier</button>
-            <br>
-            <button @click="removeDocument(doc.id)">Supprimer</button>
-            <br>
-            <div v-if="doc.doc._attachments">
-              <div v-for="(attachment, name) in doc.doc._attachments" :key="name">
-                <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
-              </div>
-            </div>
           </div>
         </li>
       </ul>
@@ -86,6 +60,7 @@ export default {
       count: 1, // Initialise le compteur
       number: 1,
       selectedDoc: null as any, // Stocke le document sélectionné
+      editDoc: null as any, // Stocke le document sélectionné
       localdb: null as PouchDB.Database<{}> | null, // Stocke l'instance de la base de données
       data: [] as any[]
     };
@@ -174,22 +149,21 @@ export default {
         });
     },
     // Fonction pour supprimer un document dans la base de données PouchDB
-    removeDocument(id: string) {
-      this.localdb?.get(id)
+    removeDocument(id: any) {
+      this.localdb
+        ?.get(id)
         .then((doc) => {
           return this.localdb?.remove(doc);
         })
-        .then((response) => {
-          console.log('Document supprimé avec succès', response);
-          // Rafraîchir la liste des documents après la suppression
-          this.fetchData();
+        .then(() => {
+          console.log('Document supprimé avec succès');
+          if (this.selectedDoc?.id === id) {
+            this.selectedDoc = null; // Efface la section si c'était le document sélectionné
+          }
+          this.fetchData(); // Rafraîchir la liste des documents
         })
         .catch((error) => {
-          if (error.name === 'not_found') {
-            console.log('Le document a déjà été supprimé ou n\'existe pas');
-            // Rafraîchir la liste des documents pour s'assurer qu'elle est à jour
-            this.fetchData();
-          }
+          console.error('Erreur lors de la suppression du document :', error);
         });
     },
     getFakeDoc() {
@@ -208,35 +182,50 @@ export default {
         "dateCommande": "2024-09-28"
       }
     },
-    modify(docId: string) {
-      // Trouve l'élément correspondant à cet ID
-      const input = document.querySelector<HTMLInputElement>(`li[id="${docId}"] input`);
+    modify(docId:any) {
+      if (!this.localdb || !this.editDoc) return;
 
-      if (!input || !this.localdb) {
-        console.error("Input ou base de données introuvable");
-        return;
-      }
-
-      const newArticleName = input.value;
-
-      // Récupère le document dans la base de données
-      this.localdb.get(docId)
-        .then((doc: any) => {
-          // Modifie le nom du produit
-          if (doc.produits && doc.produits.length > 0) {
-            doc.produits[0].nomProduit = newArticleName; // Change le nom du premier produit
-          }
-          // Sauvegarde les modifications
-          return this.localdb?.put(doc);
+      this.localdb
+        .get(docId)
+        .then((doc) => {
+          // Applique les modifications en incluant le champ _rev pour éviter les conflits
+          Object.assign(doc, this.editDoc.doc); // Applique les modifications à partir de l'objet intermédiaire
+          return this.localdb?.put(doc); // Sauvegarde avec la bonne révision
         })
         .then(() => {
-          console.log("Document modifié avec succès !");
+          console.log('Document modifié avec succès');
+          this.selectedDoc = JSON.parse(JSON.stringify(this.editDoc)); // Met à jour l'objet sélectionné
           this.fetchData(); // Actualise la liste des documents
         })
-        .catch((error: any) => {
-          console.error("Erreur lors de la modification du document :", error);
+        .catch((error) => {
+          if (error.status === 409) {
+            console.error('Conflit détecté. Tentative de résolution...');
+            // Relire la dernière version et réessayer
+            this.resolveConflict(docId);
+          } else {
+            console.error('Erreur lors de la modification du document :', error);
+          }
         });
     },
+
+
+    resolveConflict(docId: any) {
+      this.localdb?.get(docId)
+        .then((latestDoc) => {
+          // Appliquer les modifications sur la dernière version du document
+          Object.assign(latestDoc, this.editDoc.doc);
+          return this.localdb?.put(latestDoc); // Réessaie de sauvegarder
+        })
+        .then(() => {
+          console.log('Conflit résolu et document modifié avec succès');
+          this.selectedDoc = JSON.parse(JSON.stringify(this.editDoc));
+          this.fetchData();
+        })
+        .catch((error) => {
+          console.error('Impossible de résoudre le conflit :', error);
+        });
+    },
+
     syncto() {
       console.log("sync to remote database")
       try {
@@ -293,7 +282,10 @@ export default {
       });
     },
     selectDocument(doc: any) {
+
       this.selectedDoc = doc;
+      this.editDoc = JSON.parse(JSON.stringify(doc)); // Copie profonde pour éditer sans impact immédiat
+
       window.scrollTo({ top: 0, behavior: 'smooth' }); // Défile vers le haut de la page
     },
     filterDoc(doc: any) {
