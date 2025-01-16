@@ -12,23 +12,26 @@
       <br>
       <ul>
         <li v-for="doc in data" :key="doc.id" :id="doc.id">
+
+          <pre>{{ JSON.stringify(filterDoc(doc.doc), null, 2) }}</pre>
+          <input type="text" :name="'article-' + doc.id"></input>
+          <br>
+          <button @click="modify(doc.id)">Modifier</button>
+          <br>
+          <h3>Pièce jointe</h3>
+          <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
+          <br>
+          <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
+          <br>
+
+          <br>
+          <button @click="removeDocument(doc.id)">Supprimer</button>
+          <br>
           <div v-if="doc.doc._attachments">
             <div v-for="(attachment, name) in doc.doc._attachments" :key="name">
               <img :src="attachment.dataUrl" :alt="name.toString()" style="max-width: 200px; max-height: 200px;">
             </div>
           </div>
-          <pre>{{ JSON.stringify(doc.doc, null, 2) }}</pre>
-          <input type="text" :name="'article-' + doc.id"></input>
-          <br>
-          <input type="file" :name="'file-' + doc.id" :id="'file-' + doc.id">
-          <br>
-          <button @click="addFile(doc.id)">Ajouter une pièce jointe</button>
-          <br>
-          <button @click="modify(doc.id)">Modifier</button>
-          <br>
-          <button @click="removeDocument(doc.id)">Supprimer</button>
-          <br>
-
         </li>
       </ul>
     </div>
@@ -51,9 +54,6 @@ export default {
   },
   methods: {
     // Fonction pour incrémenter le compteur
-    incrementCount() {
-      this.count++;
-    },
     fetchData() {
       console.log('fetchData')
       if (this.localdb) {
@@ -122,7 +122,6 @@ export default {
       }
     },
     addRandomDocument: function () {
-
       this.localdb?.post(this.getFakeDoc())
         // Gère la promesse de succès
         .then((Response) => {
@@ -255,6 +254,10 @@ export default {
         console.error('Erreur lors de la requête :', error);
       });
     },
+    filterDoc(doc: any) {
+      const { _attachments, ...filteredDoc } = doc;
+      return filteredDoc;
+    }
 
   },
   mounted() {
