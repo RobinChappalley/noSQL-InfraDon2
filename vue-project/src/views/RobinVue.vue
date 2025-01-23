@@ -8,12 +8,14 @@
     <br>
     <button id="adddb" @click="deleteAllDocuments()">Supprimer tous les documents</button>
     <div>
-      <input type="text" v-model="searchQuery" @change="searchDocuments" placeholder="Rechercher par ID" />
+      <input type="text" v-model="searchQuery" placeholder="Rechercher par ID" />
+      <input type="submit" @click=searchIndex() value="Rechercher" />
       <ul>
         <li v-for="doc in filteredDocuments" :key="doc._id">
           {{ doc.id }} - {{ doc.title }}
         </li>
       </ul>
+      fin du résultat
     </div>
 
 
@@ -88,25 +90,95 @@ export default {
         console.error('Erreur lors de la récupération des index :', error);
       });
     },
-    async searchDocuments() {
-      try {
-        if (this.searchQuery.trim() !== '') {
-          // Recherche avec un filtre sur l'attribut indexé "id"
-          const result = await this.localdb?.find({
+    async searchIndex() {
+      if ((this.searchQuery.trim() !== '')) {
+        try {
+          // Simplified index finding
+          const indexes = await this.localdb?.getIndexes();
+          console.log('Indexes disponibles :', indexes);
+          // Look for an index on 'id_commande'
+          const idCommandeIndex = indexes?.indexes.find(
+            (index: { def: { fields: any[]
+              ; }; }) => index.def.fields.some((field) => field.id_commande)
+          );
+          console.log('Index trouvé :', idCommandeIndex);
 
-            selector: {
-              id: { $regex: `^${this.searchQuery}` }, // Recherche partielle
-            },
-          });
-          console.log(`${this.searchQuery}`)
-          this.filteredDocuments = result?.docs; // Mettez à jour les documents filtrés
-          this.checkIndexes()
+          if (idCommandeIndex) {
+            // Use the index for your search
+            const results = await this.localdb?.find({
+              selector: { id_commande: this.searchQuery },
+              use_index: idCommandeIndex.name
+            });
+          } else {
+            console.warn('No index found for id_commande');
+            // Fallback to a full scan if no index exists
+            const results = await this.localdb?.find({
+              selector: { id_commande: this.searchQuery }
+            });
+          }
+        } catch (error) {
+          console.error('Error searching indexes:', error);
         }
-      } catch (error) {
-        console.error('Erreur lors de la recherche :', error);
+      } else {
+        console.warn('Invalid search query:', this.searchQuery);
       }
     },
+    // async searchDocuments() {
+    //   try {
+    //     if (this.searchQuery.trim() !== '') {
+    //       console.log('Recherche en cours pour :', this.searchQuery);
 
+    //       // Récupérer les index disponibles
+    //       const indexes = await this.localdb?.getIndexes();
+    //       console.log('Indexes disponibles :', indexes);
+
+    //       // Trouver l'index approprié pour le champ "id"
+    //       const index = indexes?.indexes.find((idx: { def: { fields: any[]; }; }) => idx.def.fields.some(field => field.id));
+
+    //       if (!index) {
+    //         throw new Error('Aucun index approprié trouvé pour le champ "id"');
+    //       }
+
+    //       console.log('Utilisation de l\'index :', index.name);
+
+    //       // Recherche avec un filtre sur l'attribut indexé "id"
+    //       const result = await this.localdb?.find({
+    //         selector: {
+    //           id_commande: { $regex: new RegExp(this.searchQuery, 'i') }, // Recherche partielle
+    //         },
+    //         use_index: index.name // Utiliser l'index trouvé
+    //       });
+
+    //       console.log('Résultat brut de la recherche :', result);
+    //       this.filteredDocuments = result?.docs; // Mettez à jour les documents filtrés
+    //       console.log('Documents filtrés :', this.filteredDocuments);
+
+    //       this.checkIndexes();
+    //     }
+    //   } catch (error) {
+    //     console.error('Erreur lors de la recherche :', error);
+    //   }
+    // },
+
+    // searchIndex(event: Event) {
+    //   event.preventDefault()
+    //   console.log("cocoutine")
+    //   this.localdb
+    //     ?.find({
+    //       selector: { id_commande: { $regex: new RegExp(this.searchQuery, 'i') } }
+    //     })
+    //     .then((res: any) => {
+    //       this.filteredDocuments = res.docs.map((doc: any) => ({
+    //         ...doc, // Conserver tous les champs existants
+    //         _id: doc._id // Ajouter le champ 'id' égal à '_id'
+    //       }))
+    //       console.log('Résultat de la recherche :', this.filteredDocuments);
+    //     })
+    //     .catch((err: any) => {
+    //       console.log(err)
+    //     })
+
+    // },
     fetchData() {
       console.log('fetchData')
       if (this.localdb) {
@@ -325,7 +397,10 @@ export default {
     ,
     createIndex() {
       return this.localdb?.createIndex({
-        index: { fields: ['idCommande'] },
+        index: {
+          name: "idCommande",
+          fields: ['idCommande']
+        },
       })
         .then((result) => {
           console.log('Index créé avec succès', result);
@@ -413,7 +488,7 @@ export default {
   mounted() {
     // Appelle initDB lors du montage du composant
     this.initDB();
-    this.searchDocuments();
+    // this.searchIndex();
   }
 };
 </script>
